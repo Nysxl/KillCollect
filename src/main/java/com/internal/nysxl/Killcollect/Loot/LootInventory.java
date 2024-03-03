@@ -33,8 +33,6 @@ public class LootInventory {
     }
 
 
-
-
     /**
      * Populates the given GUI with the player's loot items. Each item in the loot list
      * is added to the GUI with an associated action that opens the inventory when clicked.

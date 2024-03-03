@@ -36,9 +36,12 @@ public class EntityKill implements Listener {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
+            if(loot.isEmpty()) return;
+
             // Clear the default drops
             e.getDrops().clear();
 
+            //creates the Player-head item of the player killed.
             ItemStack item = new ItemStack(Material.PLAYER_HEAD);
             ItemStack playerHead = new ItemFactory(item).withSkullOfPlayer(player);
 
