@@ -4,6 +4,6 @@ api-version: 1.20
 main: com.internal.nysxl.Killcollect.main
 depend: [NysxlUtilities]
 commands:
-  openloot:
+  spoils:
     description: Opens your loot inventory
-    usage: /openloot
+    usage: /spoils

@@ -17,9 +17,10 @@ public class LootInventory {
      * the loot is displayed in a GUI.
      *
      * @param player The player for whom the loot inventory is to be displayed.
+     * @param target The player who's gui to show.
      */
-    public LootInventory(Player player) {
-        List<Loot> playerLoot = main.playerLoot.computeIfAbsent(player, k -> new java.util.ArrayList<>());
+    public LootInventory(Player player, Player target) {
+        List<Loot> playerLoot = main.playerLoot.computeIfAbsent(target.getUniqueId(), k -> new java.util.ArrayList<>());
 
         if(playerLoot.isEmpty()) {
             player.sendMessage("You don't currently have any loot.");
@@ -30,6 +31,9 @@ public class LootInventory {
         populateGUIWithLoot(gui, playerLoot);
         gui.open(player);
     }
+
+
+
 
     /**
      * Populates the given GUI with the player's loot items. Each item in the loot list

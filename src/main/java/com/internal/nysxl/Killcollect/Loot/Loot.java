@@ -67,7 +67,7 @@ public class Loot implements InventoryHolder {
      * @param player The player to whom the loot is to be added.
      */
     private void addLootToPlayer(Player player) {
-        main.playerLoot.computeIfAbsent(player, k -> new ArrayList<>()).add(this);
+        main.playerLoot.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>()).add(this);
     }
 
     /**
