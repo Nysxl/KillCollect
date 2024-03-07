@@ -13,72 +13,102 @@ import java.util.stream.Collectors;
 
 public class Configs {
 
-    ConfigManager configManager = new ConfigManager(main.getInstance());
+    private ConfigManager configManager = new ConfigManager(main.getInstance());
 
     /**
-     * serializes the loot for all players.
-     * @param loot the loot item to serialize.
-     * @return returns a map of strings and objects to be saved into the configs.
+     * Serializes the loot for all players.
+     * This method assumes Loot contains methods to serialize its inventory and slotItem.
      */
-    public Map<String, Object> serialize(Loot loot) {
+    public Map<String, Object> serializeLoot(Loot loot) {
         Map<String, Object> serializedLoot = new HashMap<>();
-        List<Map<String, Object>> serializedItems = new ArrayList<>();
-        for (ItemStack item : loot.getInventory().getContents()) {
-            if (item != null) {
-                serializedItems.add(item.serialize());
-            }
-            serializedLoot.put("items", serializedItems);
+        List<Map<String, Object>> serializedItems = Arrays.stream(loot.getInventory().getContents())
+                .filter(Objects::nonNull)
+                .map(ItemStack::serialize)
+                .collect(Collectors.toList());
+        serializedLoot.put("items", serializedItems);
+        // Serialize slotItem if necessary
+        if (loot.getSlotItem() != null) {
+            serializedLoot.put("slotItem", loot.getSlotItem().serialize());
         }
         return serializedLoot;
     }
 
-    /**
-     * saves the serialized loot
-     */
-    public void savePlayerLoot() {
-        FileConfiguration config = configManager.getConfig("playerLoot.yml");
-        for (Map.Entry<UUID, ArrayList<Loot>> entry : main.playerLoot.entrySet()) {
-            String playerUUID = entry.getKey().toString();
-            List<Map<String, Object>> lootList = entry.getValue().stream()
-                    .map(s -> this.serialize(s))
-                    .collect(Collectors.toList());
-            config.set(playerUUID, lootList);
+    public void savePlayerLoot(UUID playerUUID, List<Loot> loots) {
+        if (playerUUID == null) {
+            System.err.println("Cannot save player loot: playerUUID is null.");
+            return;
         }
+
+        FileConfiguration config = configManager.getConfig("playerLoot.yml");
+        List<Map<String, Object>> serializedLoots = loots.stream()
+                .map(this::serializeLoot)
+                .collect(Collectors.toList());
+        config.set(playerUUID.toString(), serializedLoots);
         configManager.saveConfig("playerLoot.yml");
     }
 
     /**
-     * deserializes the config to be used.
-     * @param serializedLoot the serialized loot string from the configs.
-     * @return returns a loot item.
+     * Deserializes the config to be used.
      */
-    public Loot deserialize(Map<String, Object> serializedLoot) {
-        // Example: Deserialize a list of ItemStacks
+    public Loot deserializeLoot(Map<String, Object> serializedLoot) {
         List<ItemStack> items = new ArrayList<>();
-        List<Map<String, Object>> serializedItems = (List<Map<String, Object>>) serializedLoot.get("items");
-        for (Map<String, Object> serializedItem : serializedItems) {
-            items.add(ItemStack.deserialize(serializedItem));
+        Object itemsObj = serializedLoot.get("items");
+
+        if (itemsObj instanceof List<?>) {
+            for (Object itemObj : (List<?>)itemsObj) {
+                if (itemObj instanceof Map<?, ?>) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> itemMap = (Map<String, Object>)itemObj;
+                    items.add(ItemStack.deserialize(itemMap));
+                }
+            }
         }
-        // Reconstruct the Loot object (you'll need to adjust this according to how Loot is constructed)
-        return new Loot("Loot Inventory", null, items, null); // Placeholder for player and slotItem
+
+        ItemStack slotItem = null;
+        if (serializedLoot.containsKey("slotItem")) {
+            Object slotItemObj = serializedLoot.get("slotItem");
+            if (slotItemObj instanceof Map<?, ?>) {
+                @SuppressWarnings("unchecked") // Safe cast after instanceof check
+                Map<String, Object> slotItemMap = (Map<String, Object>)slotItemObj;
+                slotItem = ItemStack.deserialize(slotItemMap);
+            }
+        }
+
+        UUID playerUUID = null;
+        String inventoryName = "Loot Inventory";
+
+        return new Loot(inventoryName, playerUUID, items, slotItem);
     }
 
+
     /**
-     * loads the loot from the configs.
+     * Loads the loot from the configs.
      */
     public void loadPlayerLoot() {
         FileConfiguration config = configManager.getConfig("playerLoot.yml");
-        for (String playerUUID : config.getKeys(false)) {
-            List<Map<String, Object>> serializedLootList = (List<Map<String, Object>>) config.getList(playerUUID);
-            ArrayList<Loot> lootList = serializedLootList.stream()
-                    .map(this::deserialize)
-                    .collect(Collectors.toCollection(ArrayList::new));
-            // Use Bukkit to get the Player object from UUID
-            Player player = Bukkit.getPlayer(UUID.fromString(playerUUID));
-            if (player != null) {
-                main.playerLoot.put(player.getUniqueId()    , lootList);
+        for (String playerUUIDString : config.getKeys(false)) {
+            UUID playerUUID = UUID.fromString(playerUUIDString);
+            Player player = Bukkit.getPlayer(playerUUID);
+            if (player == null) continue; // Skip if player is not online
+
+            List<?> rawList = config.getList(playerUUIDString);
+            if (rawList == null) continue; // Skip if no loot is stored for this player
+
+            List<Map<String, Object>> serializedLootList = new ArrayList<>();
+            for (Object item : rawList) {
+                if (item instanceof Map<?, ?>) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) item;
+                    serializedLootList.add(map);
+                } else {
+                }
             }
+
+            List<Loot> lootList = serializedLootList.stream()
+                    .map(this::deserializeLoot)
+                    .toList();
+
+            main.playerLoot.put(playerUUID, new ArrayList<>(lootList));
         }
     }
-
 }

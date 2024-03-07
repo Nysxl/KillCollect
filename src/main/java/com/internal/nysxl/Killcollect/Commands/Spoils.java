@@ -72,6 +72,6 @@ public class Spoils implements CommandInterface {
      */
     @Override
     public boolean hasPermission(CommandSender commandSender) {
-        return false;
+        return true;
     }
 }

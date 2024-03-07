@@ -51,15 +51,14 @@ public class EntityKill implements Listener {
         }
     }
 
-    /**
-     * on death event, only meant for testing
-     * @param e the event
-     */
+
     public void onDeath(PlayerDeathEvent e){
         Player player = e.getEntity();
         List<ItemStack> loot = Arrays.stream(player.getInventory().getContents())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        if(loot.isEmpty()) return;
 
         e.getDrops().clear();
 
@@ -67,7 +66,5 @@ public class EntityKill implements Listener {
         ItemStack playerHead = new ItemFactory(item).withSkullOfPlayer(player);
 
         new Loot(player.getDisplayName(), player, loot, playerHead);
-
-        main.configs.savePlayerLoot();
     }
 }

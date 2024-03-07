@@ -37,7 +37,7 @@ public class main extends JavaPlugin {
     public void registerEvents(){
         Bukkit.getPluginManager().registerEvents(new EntityKill(), this);
         Bukkit.getPluginManager().registerEvents(new InventoryEvents(), this);
-        Bukkit.getPluginManager().registerEvents(new GUIManager(this), this);
+        //Bukkit.getPluginManager().registerEvents(new GUIManager(this), this);
     }
 
     public void registerCommands(){
@@ -46,14 +46,5 @@ public class main extends JavaPlugin {
 
     public static Plugin getInstance(){
         return instance;
-    }
-
-
-    public void onDisable(){
-        configs.savePlayerLoot();
-    }
-
-    public void save(){
-        configs.savePlayerLoot();
     }
 }

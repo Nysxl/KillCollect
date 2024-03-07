@@ -26,6 +26,8 @@ public class InventoryEvents implements Listener {
             if (e.getInventory().isEmpty() && main.playerLoot.containsKey(player)) {
                 main.playerLoot.get(player).remove(loot);
             }
+
+            main.configs.savePlayerLoot(player.getUniqueId(), main.playerLoot.get(player.getUniqueId()));
         }
     }
 }
